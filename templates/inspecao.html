@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Inspeção</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <h1>Inspeção</h1>
+
+        <form action="/inspecao" method="post">
+            
+            <label>Faróis</label>
+            <select name="farois">
+                <option value="" disabled selected>Selecione</option>
+                <option value="OK">OK</option>
+                <option value="NOK">NOK</option>
+            </select>
+
+            <label>Lanternas</label>
+            <select name="lanternas">
+                <option value="" disabled selected>Selecione</option>
+                <option value="OK">OK</option>
+                <option value="NOK">NOK</option>
+            </select>
+
+            <label>Pneus</label>
+            <select name="pneus">
+                <option value="" disabled selected>Selecione</option>
+                <option value="OK">OK</option>
+                <option value="NOK">NOK</option>
+            </select>
+
+            <label>Observações</label>
+            <input type="text" name="observacoes">
+
+            <button type="submit">Salvar</button>
+        </form>
+
+        <button onclick="location.href='/menu'">Voltar</button>
+    </div>
+</body>
+</html>
