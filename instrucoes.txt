@@ -1,0 +1,32 @@
+Ordem do desenvolvimento:
+1. Tela de login fake
+2. Tela de menu
+3. Formulário de inspeção
+4. Salvar inspeção no SQLite
+5. Formulário de abastecimento
+6. Salvar abastecimento no SQLite
+7. Formulário de downtime
+8. Salvar downtime no SQLite
+9. Criar envio para InfluxDB
+10. Criar dashboards no Grafana
+11. Publicar na nuvem
+
+Stack:
+Python
+FastAPI
+SQLite no início
+PostgreSQL depois
+HTML + Bootstrap
+InfluxDB Cloud
+Grafana Cloud
+GitHub
+Render ou Railway para hospedagem
+
+
+Passo 1
+1. Criar ambiente virtual Python
+2. Instalar FastAPI
+3. Criar main.py
+4. Criar tela login.html
+5. Rodar localmente no navegador
+6. Salvar no GitHub
