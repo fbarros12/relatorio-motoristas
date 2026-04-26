@@ -10,8 +10,12 @@ from app.database import (
     listar_inspecoes,
     salvar_abertura_turno_db,
     obter_turno_ativo,
-    salvar_finalizacao_turno_db
+    salvar_finalizacao_turno_db,
+    obter_hodometro_inicial,
+    listar_turnos
 )
+
+from app.influx_service import enviar_inspecao, enviar_finalizacao
 
 app = FastAPI(title="Relatório de Motoristas")
 
@@ -27,10 +31,7 @@ def startup():
 
 @app.get("/")
 def login_page(request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="login.html"
-    )
+    return templates.TemplateResponse(request=request, name="login.html")
 
 
 @app.get("/menu")
@@ -92,6 +93,8 @@ def salvar_inspecao(
         observacoes=observacoes
     )
 
+    enviar_inspecao(usuario, veiculo, farois, lanternas, pneus)
+
     return templates.TemplateResponse(
         request=request,
         name="menu.html",
@@ -145,6 +148,7 @@ def salvar_abertura_turno(
         context={"usuario": usuario}
     )
 
+
 @app.get("/finalizar-turno")
 def finalizar_turno_page(request: Request, usuario: str = ""):
     turno_ativo = obter_turno_ativo(usuario)
@@ -184,20 +188,36 @@ def salvar_finalizacao_turno(
 ):
     data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    hodometro_inicial = obter_hodometro_inicial(usuario)
+    km_rodado = hodometro_final - hodometro_inicial
+
     salvar_finalizacao_turno_db(
         data_hora=data_hora,
         usuario=usuario,
         veiculo=veiculo,
         turno=turno,
         hodometro_final=hodometro_final,
+        km_rodado=km_rodado,
         observacoes=observacoes
     )
+
+    enviar_finalizacao(usuario, veiculo, km_rodado)
 
     return templates.TemplateResponse(
         request=request,
         name="menu.html",
         context={
             "usuario": usuario,
-            "mensagem": "Turno finalizado com sucesso."
+            "mensagem": f"Turno finalizado. KM rodado: {km_rodado:.1f}"
         }
+    )
+
+@app.get("/historico-turnos")
+def historico_turnos(request: Request):
+    dados = listar_turnos()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="historico_turnos.html",
+        context={"dados": dados}
     )

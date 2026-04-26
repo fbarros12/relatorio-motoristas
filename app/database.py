@@ -33,15 +33,16 @@ def create_tables():
     """)
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS finalizacoes_turno (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        data_hora TEXT NOT NULL,
-        usuario TEXT NOT NULL,
-        veiculo TEXT NOT NULL,
-        turno TEXT NOT NULL,
-        hodometro_final REAL NOT NULL,
-        observacoes TEXT
-    )
+        CREATE TABLE IF NOT EXISTS finalizacoes_turno (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data_hora TEXT NOT NULL,
+            usuario TEXT NOT NULL,
+            veiculo TEXT NOT NULL,
+            turno TEXT NOT NULL,
+            hodometro_final REAL NOT NULL,
+            km_rodado REAL NOT NULL,
+            observacoes TEXT
+        )
     """)
 
     conn.commit()
@@ -111,12 +112,33 @@ def obter_turno_ativo(usuario):
     """, (usuario,))
 
     resultado = cursor.fetchone()
-
     conn.close()
 
     return resultado
 
-def salvar_finalizacao_turno_db(data_hora, usuario, veiculo, turno, hodometro_final, observacoes):
+
+def obter_hodometro_inicial(usuario):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT hodometro_inicial
+        FROM aberturas_turno
+        WHERE usuario = ?
+        ORDER BY data_hora DESC
+        LIMIT 1
+    """, (usuario,))
+
+    resultado = cursor.fetchone()
+    conn.close()
+
+    if resultado:
+        return resultado[0]
+
+    return 0
+
+
+def salvar_finalizacao_turno_db(data_hora, usuario, veiculo, turno, hodometro_final, km_rodado, observacoes):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -127,9 +149,26 @@ def salvar_finalizacao_turno_db(data_hora, usuario, veiculo, turno, hodometro_fi
             veiculo,
             turno,
             hodometro_final,
+            km_rodado,
             observacoes
-        ) VALUES (?, ?, ?, ?, ?, ?)
-    """, (data_hora, usuario, veiculo, turno, hodometro_final, observacoes))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (data_hora, usuario, veiculo, turno, hodometro_final, km_rodado, observacoes))
 
     conn.commit()
     conn.close()
+
+
+def listar_turnos():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT data_hora, usuario, veiculo, turno, km_rodado
+        FROM finalizacoes_turno
+        ORDER BY data_hora DESC
+    """)
+
+    dados = cursor.fetchall()
+    conn.close()
+
+    return dados
