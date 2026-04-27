@@ -16,9 +16,16 @@
 
             <h3 class="text-center mb-4">Finalizar Turno</h3>
 
+            {% if mensagem %}
+            <div class="alert alert-warning" role="alert">
+                {{ mensagem }}
+            </div>
+            {% endif %}
+
             <form action="/finalizar-turno" method="post">
 
                 <input type="hidden" name="usuario" value="{{ usuario }}">
+                <input type="hidden" name="abertura_id" value="{{ abertura_id }}">
                 <input type="hidden" name="veiculo" value="{{ veiculo }}">
                 <input type="hidden" name="turno" value="{{ turno }}">
 
@@ -38,8 +45,13 @@
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label">Hodometro inicial</label>
+                    <input type="text" class="form-control" value="{{ hodometro_inicial }}" readonly>
+                </div>
+
+                <div class="mb-3">
                     <label class="form-label">Hodômetro final</label>
-                    <input type="number" step="0.1" name="hodometro_final" class="form-control" required>
+                    <input type="number" step="0.1" min="{{ hodometro_inicial }}" name="hodometro_final" class="form-control" required>
                 </div>
 
                 <div class="mb-4">

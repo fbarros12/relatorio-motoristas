@@ -35,6 +35,7 @@ def create_tables():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS finalizacoes_turno (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            abertura_id INTEGER,
             data_hora TEXT NOT NULL,
             usuario TEXT NOT NULL,
             veiculo TEXT NOT NULL,
@@ -44,6 +45,13 @@ def create_tables():
             observacoes TEXT
         )
     """)
+
+    cursor.execute("PRAGMA table_info(finalizacoes_turno)")
+    colunas = [coluna[1] for coluna in cursor.fetchall()]
+    if "abertura_id" not in colunas:
+        cursor.execute("ALTER TABLE finalizacoes_turno ADD COLUMN abertura_id INTEGER")
+    if "km_rodado" not in colunas:
+        cursor.execute("ALTER TABLE finalizacoes_turno ADD COLUMN km_rodado REAL DEFAULT 0")
 
     conn.commit()
     conn.close()
@@ -104,10 +112,22 @@ def obter_turno_ativo(usuario):
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT veiculo, turno
-        FROM aberturas_turno
-        WHERE usuario = ?
-        ORDER BY data_hora DESC
+        SELECT a.id, a.veiculo, a.turno, a.hodometro_inicial
+        FROM aberturas_turno a
+        WHERE a.usuario = ?
+          AND NOT EXISTS (
+              SELECT 1
+              FROM finalizacoes_turno f
+              WHERE f.abertura_id = a.id
+                 OR (
+                    f.abertura_id IS NULL
+                    AND f.usuario = a.usuario
+                    AND f.veiculo = a.veiculo
+                    AND f.turno = a.turno
+                    AND f.data_hora >= a.data_hora
+                 )
+          )
+        ORDER BY a.data_hora DESC
         LIMIT 1
     """, (usuario,))
 
@@ -117,33 +137,33 @@ def obter_turno_ativo(usuario):
     return resultado
 
 
-def obter_hodometro_inicial(usuario):
+def obter_hodometro_inicial(abertura_id, usuario):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute("""
         SELECT hodometro_inicial
         FROM aberturas_turno
-        WHERE usuario = ?
-        ORDER BY data_hora DESC
+        WHERE id = ? AND usuario = ?
         LIMIT 1
-    """, (usuario,))
+    """, (abertura_id, usuario))
 
     resultado = cursor.fetchone()
     conn.close()
 
-    if resultado:
-        return resultado[0]
+    if not resultado:
+        return None
 
-    return 0
+    return resultado[0]
 
 
-def salvar_finalizacao_turno_db(data_hora, usuario, veiculo, turno, hodometro_final, km_rodado, observacoes):
+def salvar_finalizacao_turno_db(abertura_id, data_hora, usuario, veiculo, turno, hodometro_final, km_rodado, observacoes):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute("""
         INSERT INTO finalizacoes_turno (
+            abertura_id,
             data_hora,
             usuario,
             veiculo,
@@ -151,8 +171,8 @@ def salvar_finalizacao_turno_db(data_hora, usuario, veiculo, turno, hodometro_fi
             hodometro_final,
             km_rodado,
             observacoes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (data_hora, usuario, veiculo, turno, hodometro_final, km_rodado, observacoes))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (abertura_id, data_hora, usuario, veiculo, turno, hodometro_final, km_rodado, observacoes))
 
     conn.commit()
     conn.close()

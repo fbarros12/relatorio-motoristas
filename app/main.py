@@ -57,8 +57,8 @@ def inspecao_page(request: Request, usuario: str = ""):
             }
         )
 
-    veiculo = turno_ativo[0]
-    turno = turno_ativo[1]
+    veiculo = turno_ativo[1]
+    turno = turno_ativo[2]
 
     return templates.TemplateResponse(
         request=request,
@@ -163,16 +163,20 @@ def finalizar_turno_page(request: Request, usuario: str = ""):
             }
         )
 
-    veiculo = turno_ativo[0]
-    turno = turno_ativo[1]
+    abertura_id = turno_ativo[0]
+    veiculo = turno_ativo[1]
+    turno = turno_ativo[2]
+    hodometro_inicial = turno_ativo[3]
 
     return templates.TemplateResponse(
         request=request,
         name="finalizar_turno.html",
         context={
             "usuario": usuario,
+            "abertura_id": abertura_id,
             "veiculo": veiculo,
-            "turno": turno
+            "turno": turno,
+            "hodometro_inicial": hodometro_inicial
         }
     )
 
@@ -180,6 +184,7 @@ def finalizar_turno_page(request: Request, usuario: str = ""):
 @app.post("/finalizar-turno")
 def salvar_finalizacao_turno(
     request: Request,
+    abertura_id: int = Form(...),
     usuario: str = Form(...),
     veiculo: str = Form(...),
     turno: str = Form(...),
@@ -188,10 +193,35 @@ def salvar_finalizacao_turno(
 ):
     data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    hodometro_inicial = obter_hodometro_inicial(usuario)
+    hodometro_inicial = obter_hodometro_inicial(abertura_id, usuario)
+    if hodometro_inicial is None:
+        return templates.TemplateResponse(
+            request=request,
+            name="menu.html",
+            context={
+                "usuario": usuario,
+                "mensagem": "Não foi possível localizar a abertura deste turno."
+            }
+        )
+
     km_rodado = hodometro_final - hodometro_inicial
 
+    if km_rodado < 0:
+        return templates.TemplateResponse(
+            request=request,
+            name="finalizar_turno.html",
+            context={
+                "usuario": usuario,
+                "abertura_id": abertura_id,
+                "veiculo": veiculo,
+                "turno": turno,
+                "hodometro_inicial": hodometro_inicial,
+                "mensagem": "O hodômetro final não pode ser menor que o hodômetro inicial."
+            }
+        )
+
     salvar_finalizacao_turno_db(
+        abertura_id=abertura_id,
         data_hora=data_hora,
         usuario=usuario,
         veiculo=veiculo,
