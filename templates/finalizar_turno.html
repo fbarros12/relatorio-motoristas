@@ -10,20 +10,24 @@
 
 <body class="bg-light">
 
+<!-- Formulario de encerramento do turno ativo. -->
 <div class="container py-4">
     <div class="card shadow-sm border-0 rounded-4 mx-auto" style="max-width: 480px;">
         <div class="card-body p-4">
 
             <h3 class="text-center mb-4">Finalizar Turno</h3>
 
+            <!-- Mensagem usada para erros de validacao do encerramento. -->
             {% if mensagem %}
             <div class="alert alert-warning" role="alert">
                 {{ mensagem }}
             </div>
             {% endif %}
 
+            <!-- Envia os dados finais para calcular a quilometragem rodada. -->
             <form action="/finalizar-turno" method="post">
 
+                <!-- Campos ocultos preservam a abertura que esta sendo finalizada. -->
                 <input type="hidden" name="usuario" value="{{ usuario }}">
                 <input type="hidden" name="abertura_id" value="{{ abertura_id }}">
                 <input type="hidden" name="veiculo" value="{{ veiculo }}">

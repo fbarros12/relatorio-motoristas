@@ -1,12 +1,15 @@
 import sqlite3
 
+# Nome do arquivo SQLite usado pela aplicacao local.
 DB_NAME = "relatorio_motoristas.db"
 
 
 def create_tables():
+    # Garante que todas as tabelas existam antes da aplicacao receber uso.
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
+    # Historico das inspecoes feitas durante o turno do motorista.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS inspecoes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,6 +23,7 @@ def create_tables():
         )
     """)
 
+    # Registro de inicio de turno, incluindo veiculo e hodometro inicial.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS aberturas_turno (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,6 +36,7 @@ def create_tables():
         )
     """)
 
+    # Registro de encerramento do turno, com calculo de quilometragem.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS finalizacoes_turno (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,6 +51,7 @@ def create_tables():
         )
     """)
 
+    # Mantem compatibilidade com bancos criados antes desses campos existirem.
     cursor.execute("PRAGMA table_info(finalizacoes_turno)")
     colunas = [coluna[1] for coluna in cursor.fetchall()]
     if "abertura_id" not in colunas:
@@ -58,6 +64,7 @@ def create_tables():
 
 
 def salvar_abertura_turno_db(data_hora, usuario, veiculo, hodometro_inicial, turno, observacoes):
+    # Insere uma nova abertura de turno no banco local.
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -77,6 +84,7 @@ def salvar_abertura_turno_db(data_hora, usuario, veiculo, hodometro_inicial, tur
 
 
 def salvar_inspecao_db(data_hora, usuario, veiculo, farois, lanternas, pneus, observacoes):
+    # Persiste a inspecao preenchida pelo motorista.
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -97,6 +105,7 @@ def salvar_inspecao_db(data_hora, usuario, veiculo, farois, lanternas, pneus, ob
 
 
 def listar_inspecoes():
+    # Retorna as inspecoes mais recentes primeiro para a tela de historico.
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -108,6 +117,7 @@ def listar_inspecoes():
 
 
 def obter_turno_ativo(usuario):
+    # Busca a abertura mais recente do usuario que ainda nao tem finalizacao.
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -138,6 +148,7 @@ def obter_turno_ativo(usuario):
 
 
 def obter_hodometro_inicial(abertura_id, usuario):
+    # Confere o hodometro inicial do turno antes de calcular o km rodado.
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -158,6 +169,7 @@ def obter_hodometro_inicial(abertura_id, usuario):
 
 
 def salvar_finalizacao_turno_db(abertura_id, data_hora, usuario, veiculo, turno, hodometro_final, km_rodado, observacoes):
+    # Salva o encerramento do turno com a quilometragem ja calculada.
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -179,6 +191,7 @@ def salvar_finalizacao_turno_db(abertura_id, data_hora, usuario, veiculo, turno,
 
 
 def listar_turnos():
+    # Retorna os turnos finalizados para o historico.
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 

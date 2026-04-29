@@ -10,14 +10,17 @@
 
 <body class="bg-light">
 
+<!-- Formulario usado para iniciar um turno de trabalho. -->
 <div class="container py-4">
     <div class="card shadow-sm border-0 rounded-4 mx-auto" style="max-width: 480px;">
         <div class="card-body p-4">
 
             <h3 class="text-center mb-4">Abertura de Turno</h3>
 
+            <!-- Envia veiculo, hodometro inicial e turno para o banco local. -->
             <form action="/abertura-turno" method="post">
 
+                <!-- Usuario oculto associa a abertura ao motorista atual. -->
                 <input type="hidden" name="usuario" value="{{ usuario }}">
 
                 <div class="mb-3">

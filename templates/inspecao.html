@@ -10,13 +10,16 @@
 
 <body class="bg-light">
 
+<!-- Formulario de inspecao vinculado ao turno ativo do motorista. -->
 <div class="container py-4">
     <div class="card shadow-sm border-0 rounded-4 mx-auto" style="max-width: 480px;">
         <div class="card-body p-4">
 
             <h3 class="text-center mb-4">Inspeção</h3>
 
+            <!-- Envia os itens de seguranca para salvar no SQLite e InfluxDB. -->
             <form action="/inspecao" method="post">
+                <!-- Usuario fica oculto para manter o vinculo com o motorista logado. -->
                 <input type="hidden" name="usuario" value="{{ usuario }}">
 
                 <div class="mb-3">

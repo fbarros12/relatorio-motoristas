@@ -10,12 +10,14 @@
 
 <body class="bg-light">
 
+<!-- Tabela com todas as inspecoes salvas no SQLite. -->
 <div class="container py-4">
     <div class="card shadow-sm border-0 rounded-4">
         <div class="card-body">
 
             <h3 class="text-center mb-4">Histórico de Inspeções</h3>
 
+            <!-- table-responsive mantem a consulta legivel em telas pequenas. -->
             <div class="table-responsive">
                 <table class="table table-striped table-hover align-middle">
                     <thead class="table-dark">
@@ -31,12 +33,14 @@
                     </thead>
 
                     <tbody>
+                        <!-- Cada item segue a ordem retornada por listar_inspecoes(). -->
                         {% for item in dados %}
                         <tr>
                             <td>{{ item[1] }}</td>
                             <td>{{ item[2] }}</td>
                             <td>{{ item[3] }}</td>
 
+                            <!-- Badges destacam rapidamente o status de cada item. -->
                             <td>
                                 {% if item[4] == "OK" %}
                                     <span class="badge bg-success">OK</span>

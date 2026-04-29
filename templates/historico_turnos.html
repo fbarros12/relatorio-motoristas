@@ -10,12 +10,14 @@
 
 <body class="bg-light">
 
+<!-- Tabela com os turnos ja finalizados. -->
 <div class="container py-4">
     <div class="card shadow-sm border-0 rounded-4">
         <div class="card-body">
 
             <h3 class="text-center mb-4">Histórico de Turnos</h3>
 
+            <!-- A tabela fica rolavel horizontalmente no celular. -->
             <div class="table-responsive">
                 <table class="table table-striped table-hover align-middle">
                     <thead class="table-dark">
@@ -29,6 +31,7 @@
                     </thead>
 
                     <tbody>
+                        <!-- Cada item segue a ordem retornada por listar_turnos(). -->
                         {% for item in dados %}
                         <tr>
                             <td>{{ item[0] }}</td>

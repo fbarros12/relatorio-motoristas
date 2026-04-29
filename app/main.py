@@ -17,25 +17,31 @@ from app.database import (
 
 from app.influx_service import enviar_inspecao, enviar_finalizacao
 
+# Aplicacao principal FastAPI.
 app = FastAPI(title="Relatório de Motoristas")
 
+# Disponibiliza arquivos estaticos em /static.
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Pasta onde ficam os arquivos HTML renderizados pelo Jinja2.
 templates = Jinja2Templates(directory="templates")
 
 
 @app.on_event("startup")
 def startup():
+    # Cria ou atualiza as tabelas locais ao iniciar o servidor.
     create_tables()
 
 
 @app.get("/")
 def login_page(request: Request):
+    # Tela inicial com login simples.
     return templates.TemplateResponse(request=request, name="login.html")
 
 
 @app.get("/menu")
 def menu_page(request: Request, usuario: str = ""):
+    # Menu principal recebe o usuario pela query string.
     return templates.TemplateResponse(
         request=request,
         name="menu.html",
@@ -45,6 +51,7 @@ def menu_page(request: Request, usuario: str = ""):
 
 @app.get("/inspecao")
 def inspecao_page(request: Request, usuario: str = ""):
+    # A inspecao so pode ser preenchida quando ha um turno aberto.
     turno_ativo = obter_turno_ativo(usuario)
 
     if not turno_ativo:
@@ -81,8 +88,10 @@ def salvar_inspecao(
     pneus: str = Form(...),
     observacoes: str = Form("")
 ):
+    # Data e hora padronizadas para salvar no SQLite.
     data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    # Salva primeiro no banco local.
     salvar_inspecao_db(
         data_hora=data_hora,
         usuario=usuario,
@@ -93,6 +102,7 @@ def salvar_inspecao(
         observacoes=observacoes
     )
 
+    # Envia tambem para o InfluxDB, usado em dashboards externos.
     enviar_inspecao(usuario, veiculo, farois, lanternas, pneus)
 
     return templates.TemplateResponse(
@@ -104,6 +114,7 @@ def salvar_inspecao(
 
 @app.get("/historico")
 def historico(request: Request):
+    # Lista todas as inspecoes cadastradas.
     dados = listar_inspecoes()
 
     return templates.TemplateResponse(
@@ -115,6 +126,7 @@ def historico(request: Request):
 
 @app.get("/abertura-turno")
 def abertura_turno_page(request: Request, usuario: str = ""):
+    # Formulario de inicio do turno do motorista.
     return templates.TemplateResponse(
         request=request,
         name="abertura_turno.html",
@@ -131,6 +143,7 @@ def salvar_abertura_turno(
     turno: str = Form(...),
     observacoes: str = Form("")
 ):
+    # Marca o horario de abertura do turno.
     data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     salvar_abertura_turno_db(
@@ -151,6 +164,7 @@ def salvar_abertura_turno(
 
 @app.get("/finalizar-turno")
 def finalizar_turno_page(request: Request, usuario: str = ""):
+    # Carrega o turno aberto para preencher os dados de encerramento.
     turno_ativo = obter_turno_ativo(usuario)
 
     if not turno_ativo:
@@ -191,8 +205,10 @@ def salvar_finalizacao_turno(
     hodometro_final: float = Form(...),
     observacoes: str = Form("")
 ):
+    # Registra o horario em que o turno foi finalizado.
     data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    # O hodometro inicial vem da abertura, evitando confiar em valor do formulario.
     hodometro_inicial = obter_hodometro_inicial(abertura_id, usuario)
     if hodometro_inicial is None:
         return templates.TemplateResponse(
@@ -204,8 +220,10 @@ def salvar_finalizacao_turno(
             }
         )
 
+    # Calcula a distancia rodada no turno.
     km_rodado = hodometro_final - hodometro_inicial
 
+    # Impede finalizar com hodometro menor do que o inicial.
     if km_rodado < 0:
         return templates.TemplateResponse(
             request=request,
@@ -220,6 +238,7 @@ def salvar_finalizacao_turno(
             }
         )
 
+    # Salva a finalizacao no SQLite.
     salvar_finalizacao_turno_db(
         abertura_id=abertura_id,
         data_hora=data_hora,
@@ -231,6 +250,7 @@ def salvar_finalizacao_turno(
         observacoes=observacoes
     )
 
+    # Envia o resumo do turno para o InfluxDB.
     enviar_finalizacao(usuario, veiculo, km_rodado)
 
     return templates.TemplateResponse(
@@ -244,6 +264,7 @@ def salvar_finalizacao_turno(
 
 @app.get("/historico-turnos")
 def historico_turnos(request: Request):
+    # Lista os turnos ja encerrados.
     dados = listar_turnos()
 
     return templates.TemplateResponse(
