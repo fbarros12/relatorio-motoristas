@@ -168,6 +168,24 @@ def obter_hodometro_inicial(abertura_id, usuario):
     return resultado[0]
 
 
+def abertura_ja_finalizada(abertura_id):
+    # Verifica se uma abertura ja possui encerramento registrado.
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT 1
+        FROM finalizacoes_turno
+        WHERE abertura_id = ?
+        LIMIT 1
+    """, (abertura_id,))
+
+    resultado = cursor.fetchone()
+    conn.close()
+
+    return resultado is not None
+
+
 def salvar_finalizacao_turno_db(abertura_id, data_hora, usuario, veiculo, turno, hodometro_final, km_rodado, observacoes):
     # Salva o encerramento do turno com a quilometragem ja calculada.
     conn = sqlite3.connect(DB_NAME)

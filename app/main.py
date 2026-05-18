@@ -12,7 +12,8 @@ from app.database import (
     obter_turno_ativo,
     salvar_finalizacao_turno_db,
     obter_hodometro_inicial,
-    listar_turnos
+    listar_turnos,
+    abertura_ja_finalizada
 )
 
 from app.influx_service import enviar_inspecao, enviar_finalizacao
@@ -217,6 +218,16 @@ def salvar_finalizacao_turno(
             context={
                 "usuario": usuario,
                 "mensagem": "Não foi possível localizar a abertura deste turno."
+            }
+        )
+
+    if abertura_ja_finalizada(abertura_id):
+        return templates.TemplateResponse(
+            request=request,
+            name="menu.html",
+            context={
+                "usuario": usuario,
+                "mensagem": "Este turno já foi finalizado."
             }
         )
 
