@@ -1,3 +1,5 @@
+import sqlite3
+
 from app import database
 
 
@@ -75,6 +77,50 @@ def test_salva_e_lista_abastecimentos_em_ordem_decrescente(temp_db):
             "Diesel S10",
             "Primeiro abastecimento",
         ),
+    ]
+
+
+def test_salva_downtime_com_tempo_calculado(temp_db):
+    database.salvar_downtime_db(
+        data_hora_registro="2026-05-18 09:45:00",
+        usuario="Ana",
+        veiculo="CAM-01",
+        turno="Manha",
+        categoria="Manutenção",
+        hora_inicio="2026-05-18T09:00",
+        hora_fim="2026-05-18T09:45",
+        tempo_parado_min=45.0,
+        observacoes="Troca de correia",
+    )
+
+    conn = sqlite3.connect(database.DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT
+            usuario,
+            veiculo,
+            turno,
+            categoria,
+            hora_inicio,
+            hora_fim,
+            tempo_parado_min,
+            observacoes
+        FROM downtimes
+    """)
+    downtimes = cursor.fetchall()
+    conn.close()
+
+    assert downtimes == [
+        (
+            "Ana",
+            "CAM-01",
+            "Manha",
+            "Manutenção",
+            "2026-05-18T09:00",
+            "2026-05-18T09:45",
+            45.0,
+            "Troca de correia",
+        )
     ]
 
 

@@ -74,10 +74,27 @@ def create_tables():
         )
     """)
 
+    # Registro de paradas durante um turno aberto.
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS downtimes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data_hora_registro TEXT NOT NULL,
+            usuario TEXT NOT NULL,
+            veiculo TEXT NOT NULL,
+            turno TEXT NOT NULL,
+            categoria TEXT NOT NULL,
+            hora_inicio TEXT NOT NULL,
+            hora_fim TEXT NOT NULL,
+            tempo_parado_min REAL NOT NULL,
+            observacoes TEXT
+        )
+    """)
+
     conn.commit()
     conn.close()
 
-    def listar_abastecimentos():
+
+def listar_abastecimentos():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -89,7 +106,8 @@ def create_tables():
             turno,
             hodometro,
             litros,
-            combustivel
+            combustivel,
+            observacoes
         FROM abastecimentos
         ORDER BY data_hora DESC
     """)
@@ -118,6 +136,49 @@ def salvar_abastecimento_db(data_hora, usuario, veiculo, turno, hodometro, litro
             observacoes
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, (data_hora, usuario, veiculo, turno, hodometro, litros, combustivel, observacoes))
+
+    conn.commit()
+    conn.close()
+
+
+def salvar_downtime_db(
+    data_hora_registro,
+    usuario,
+    veiculo,
+    turno,
+    categoria,
+    hora_inicio,
+    hora_fim,
+    tempo_parado_min,
+    observacoes
+):
+    # Persiste o downtime com o tempo parado ja calculado.
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO downtimes (
+            data_hora_registro,
+            usuario,
+            veiculo,
+            turno,
+            categoria,
+            hora_inicio,
+            hora_fim,
+            tempo_parado_min,
+            observacoes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        data_hora_registro,
+        usuario,
+        veiculo,
+        turno,
+        categoria,
+        hora_inicio,
+        hora_fim,
+        tempo_parado_min,
+        observacoes
+    ))
 
     conn.commit()
     conn.close()

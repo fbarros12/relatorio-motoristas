@@ -15,7 +15,8 @@ from app.database import (
     salvar_finalizacao_turno_db,
     obter_hodometro_inicial,
     listar_turnos,
-    abertura_ja_finalizada
+    abertura_ja_finalizada,
+    salvar_downtime_db
 )
 
 from app.influx_service import enviar_inspecao, enviar_finalizacao
@@ -324,6 +325,88 @@ def abastecimento_page(request: Request, usuario: str = ""):
             "usuario": usuario,
             "veiculo": veiculo,
             "turno": turno
+        }
+    )
+
+
+@app.get("/downtime")
+def downtime_page(request: Request, usuario: str = ""):
+    # O downtime so pode ser registrado durante um turno aberto.
+    turno_ativo = obter_turno_ativo(usuario)
+
+    if not turno_ativo:
+        return templates.TemplateResponse(
+            request=request,
+            name="menu.html",
+            context={
+                "usuario": usuario,
+                "mensagem": "Abra um turno antes de registrar um downtime."
+            }
+        )
+
+    veiculo = turno_ativo[1]
+    turno = turno_ativo[2]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="downtime.html",
+        context={
+            "usuario": usuario,
+            "veiculo": veiculo,
+            "turno": turno
+        }
+    )
+
+
+@app.post("/downtime")
+def salvar_downtime(
+    request: Request,
+    usuario: str = Form(...),
+    veiculo: str = Form(...),
+    turno: str = Form(...),
+    categoria: str = Form(...),
+    hora_inicio: str = Form(...),
+    hora_fim: str = Form(...),
+    observacoes: str = Form("")
+):
+    # Calcula automaticamente o tempo parado a partir dos campos datetime-local.
+    data_hora_registro = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    inicio = datetime.fromisoformat(hora_inicio)
+    fim = datetime.fromisoformat(hora_fim)
+
+    tempo_parado_min = (fim - inicio).total_seconds() / 60
+
+    if tempo_parado_min < 0:
+        return templates.TemplateResponse(
+            request=request,
+            name="downtime.html",
+            context={
+                "usuario": usuario,
+                "veiculo": veiculo,
+                "turno": turno,
+                "mensagem": "A hora final não pode ser menor que a hora inicial."
+            }
+        )
+
+    salvar_downtime_db(
+        data_hora_registro=data_hora_registro,
+        usuario=usuario,
+        veiculo=veiculo,
+        turno=turno,
+        categoria=categoria,
+        hora_inicio=hora_inicio,
+        hora_fim=hora_fim,
+        tempo_parado_min=tempo_parado_min,
+        observacoes=observacoes
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="menu.html",
+        context={
+            "usuario": usuario,
+            "mensagem": f"Downtime salvo com sucesso. Tempo parado: {tempo_parado_min:.1f} min."
         }
     )
 

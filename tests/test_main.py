@@ -28,6 +28,114 @@ def test_abastecimento_exige_turno_aberto(client):
     assert "Abra um turno antes de registrar um abastecimento." in response.text
 
 
+def test_downtime_exige_turno_aberto(client):
+    response = client.get("/downtime", params={"usuario": "Ana"})
+
+    assert response.status_code == 200
+    assert "Abra um turno antes de registrar um downtime." in response.text
+
+
+def test_fluxo_de_downtime_abre_com_dados_do_turno_ativo(client):
+    menu = client.get("/menu", params={"usuario": "Ana"})
+
+    assert "/downtime?usuario=Ana" in menu.text
+
+    client.post(
+        "/abertura-turno",
+        data={
+            "usuario": "Ana",
+            "veiculo": "CAM-01",
+            "hodometro_inicial": "1000.0",
+            "turno": "Manha",
+            "observacoes": "",
+        },
+    )
+
+    pagina_downtime = client.get("/downtime", params={"usuario": "Ana"})
+
+    assert pagina_downtime.status_code == 200
+    assert "Registro de Downtime" in pagina_downtime.text
+    assert 'name="veiculo" value="CAM-01"' in pagina_downtime.text
+    assert 'name="turno" value="Manha"' in pagina_downtime.text
+
+
+def test_fluxo_de_downtime_salva_tempo_parado_calculado(client):
+    client.post(
+        "/abertura-turno",
+        data={
+            "usuario": "Ana",
+            "veiculo": "CAM-01",
+            "hodometro_inicial": "1000.0",
+            "turno": "Manha",
+            "observacoes": "",
+        },
+    )
+
+    response = client.post(
+        "/downtime",
+        data={
+            "usuario": "Ana",
+            "veiculo": "CAM-01",
+            "turno": "Manha",
+            "categoria": "Manutenção",
+            "hora_inicio": "2026-05-18T08:15",
+            "hora_fim": "2026-05-18T09:45",
+            "observacoes": "Troca de correia",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Downtime salvo com sucesso. Tempo parado: 90.0 min." in response.text
+
+    conn = sqlite3.connect(database.DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT usuario, veiculo, turno, categoria, hora_inicio, hora_fim, tempo_parado_min, observacoes
+        FROM downtimes
+    """)
+    downtimes = cursor.fetchall()
+    conn.close()
+
+    assert downtimes == [
+        (
+            "Ana",
+            "CAM-01",
+            "Manha",
+            "Manutenção",
+            "2026-05-18T08:15",
+            "2026-05-18T09:45",
+            90.0,
+            "Troca de correia",
+        )
+    ]
+
+
+def test_downtime_rejeita_hora_final_menor_que_inicial(client):
+    response = client.post(
+        "/downtime",
+        data={
+            "usuario": "Ana",
+            "veiculo": "CAM-01",
+            "turno": "Manha",
+            "categoria": "Clima",
+            "hora_inicio": "2026-05-18T10:00",
+            "hora_fim": "2026-05-18T09:00",
+            "observacoes": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "A hora final não pode ser menor que a hora inicial." in response.text
+
+    conn = sqlite3.connect(database.DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM downtimes")
+    total = cursor.fetchone()[0]
+    conn.close()
+
+    assert total == 0
+
+
 def test_fluxo_de_abastecimento_salva_dados_do_turno_ativo(client):
     client.post(
         "/abertura-turno",
