@@ -9,6 +9,8 @@ from app.database import (
     salvar_inspecao_db,
     listar_inspecoes,
     salvar_abertura_turno_db,
+    salvar_abastecimento_db,
+    listar_abastecimentos,
     obter_turno_ativo,
     salvar_finalizacao_turno_db,
     obter_hodometro_inicial,
@@ -282,4 +284,80 @@ def historico_turnos(request: Request):
         request=request,
         name="historico_turnos.html",
         context={"dados": dados}
+    )
+
+
+@app.get("/historico-abastecimentos")
+def historico_abastecimentos(request: Request, usuario: str = ""):
+    # Lista todos os abastecimentos cadastrados.
+    dados = listar_abastecimentos()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="historico_abastecimentos.html",
+        context={"dados": dados, "usuario": usuario}
+    )
+
+
+@app.get("/abastecimento")
+def abastecimento_page(request: Request, usuario: str = ""):
+    # O abastecimento so pode ser registrado durante um turno aberto.
+    turno_ativo = obter_turno_ativo(usuario)
+
+    if not turno_ativo:
+        return templates.TemplateResponse(
+            request=request,
+            name="menu.html",
+            context={
+                "usuario": usuario,
+                "mensagem": "Abra um turno antes de registrar um abastecimento."
+            }
+        )
+
+    veiculo = turno_ativo[1]
+    turno = turno_ativo[2]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="abastecimento.html",
+        context={
+            "usuario": usuario,
+            "veiculo": veiculo,
+            "turno": turno
+        }
+    )
+
+
+@app.post("/abastecimento")
+def salvar_abastecimento(
+    request: Request,
+    usuario: str = Form(...),
+    veiculo: str = Form(...),
+    turno: str = Form(...),
+    hodometro: float = Form(...),
+    litros: float = Form(...),
+    combustivel: str = Form(...),
+    observacoes: str = Form("")
+):
+    # Registra o abastecimento feito durante o turno ativo.
+    data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    salvar_abastecimento_db(
+        data_hora=data_hora,
+        usuario=usuario,
+        veiculo=veiculo,
+        turno=turno,
+        hodometro=hodometro,
+        litros=litros,
+        combustivel=combustivel,
+        observacoes=observacoes
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="menu.html",
+        context={
+            "usuario": usuario,
+            "mensagem": "Abastecimento salvo com sucesso."
+        }
     )

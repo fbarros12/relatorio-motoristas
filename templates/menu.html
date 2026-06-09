@@ -37,7 +37,7 @@
                     Inspeção
                 </button>
 
-                <button class="btn btn-outline-primary btn-lg" onclick="location.href='/abastecimento'">
+                <button class="btn btn-outline-primary btn-lg" onclick="location.href='/abastecimento?usuario={{ usuario }}'">
                     Abastecimento
                 </button>
 
@@ -51,6 +51,10 @@
 
                 <button class="btn btn-outline-dark btn-lg" onclick="location.href='/historico-turnos'">
                     Histórico de Turnos
+                </button>
+
+                <button class="btn btn-outline-dark btn-lg" onclick="location.href='/historico-abastecimentos?usuario={{ usuario }}'">
+                    Histórico de Abastecimentos
                 </button>
 
                 <button class="btn btn-danger btn-lg" onclick="location.href='/finalizar-turno?usuario={{ usuario }}'">

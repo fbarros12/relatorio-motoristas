@@ -1,3 +1,8 @@
+import sqlite3
+
+from app import database
+
+
 def test_login_e_menu_renderizam(client):
     login = client.get("/")
     menu = client.get("/menu", params={"usuario": "Ana"})
@@ -14,6 +19,71 @@ def test_inspecao_exige_turno_aberto(client):
 
     assert response.status_code == 200
     assert "Abra um turno antes de registrar uma inspeção." in response.text
+
+
+def test_abastecimento_exige_turno_aberto(client):
+    response = client.get("/abastecimento", params={"usuario": "Ana"})
+
+    assert response.status_code == 200
+    assert "Abra um turno antes de registrar um abastecimento." in response.text
+
+
+def test_fluxo_de_abastecimento_salva_dados_do_turno_ativo(client):
+    client.post(
+        "/abertura-turno",
+        data={
+            "usuario": "Ana",
+            "veiculo": "CAM-01",
+            "hodometro_inicial": "1000.0",
+            "turno": "Manha",
+            "observacoes": "",
+        },
+    )
+
+    pagina_abastecimento = client.get("/abastecimento", params={"usuario": "Ana"})
+
+    assert pagina_abastecimento.status_code == 200
+    assert "Abastecimento" in pagina_abastecimento.text
+    assert 'name="veiculo" value="CAM-01"' in pagina_abastecimento.text
+    assert 'name="turno" value="Manha"' in pagina_abastecimento.text
+
+    response = client.post(
+        "/abastecimento",
+        data={
+            "usuario": "Ana",
+            "veiculo": "CAM-01",
+            "turno": "Manha",
+            "hodometro": "1010.5",
+            "litros": "35.25",
+            "combustivel": "Diesel S10",
+            "observacoes": "Posto central",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Abastecimento salvo com sucesso." in response.text
+
+    conn = sqlite3.connect(database.DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT usuario, veiculo, turno, hodometro, litros, combustivel, observacoes
+        FROM abastecimentos
+    """)
+    abastecimentos = cursor.fetchall()
+    conn.close()
+
+    assert abastecimentos == [
+        ("Ana", "CAM-01", "Manha", 1010.5, 35.25, "Diesel S10", "Posto central")
+    ]
+
+    historico = client.get("/historico-abastecimentos", params={"usuario": "Ana"})
+
+    assert historico.status_code == 200
+    assert "Histórico de Abastecimentos" in historico.text
+    assert "CAM-01" in historico.text
+    assert "Diesel S10" in historico.text
+    assert "35.25 L" in historico.text
+    assert "Posto central" in historico.text
 
 
 def test_fluxo_de_abertura_inspecao_e_finalizacao(client, fake_influx):
@@ -144,4 +214,3 @@ def test_finalizacao_rejeita_abertura_inexistente(client, fake_influx):
     assert response.status_code == 200
     assert "Não foi possível localizar a abertura deste turno." in response.text
     assert fake_influx.finalizacoes == []
-

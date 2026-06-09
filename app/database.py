@@ -59,8 +59,62 @@ def create_tables():
     if "km_rodado" not in colunas:
         cursor.execute("ALTER TABLE finalizacoes_turno ADD COLUMN km_rodado REAL DEFAULT 0")
 
+    # Historico dos abastecimentos registrados durante um turno aberto.
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS abastecimentos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data_hora TEXT NOT NULL,
+            usuario TEXT NOT NULL,
+            veiculo TEXT NOT NULL,
+            turno TEXT NOT NULL,
+            hodometro REAL NOT NULL,
+            litros REAL NOT NULL,
+            combustivel TEXT NOT NULL,
+            observacoes TEXT
+        )
+    """)
+
     conn.commit()
     conn.close()
+
+
+def salvar_abastecimento_db(data_hora, usuario, veiculo, turno, hodometro, litros, combustivel, observacoes):
+    # Persiste o abastecimento preenchido pelo motorista.
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO abastecimentos (
+            data_hora,
+            usuario,
+            veiculo,
+            turno,
+            hodometro,
+            litros,
+            combustivel,
+            observacoes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (data_hora, usuario, veiculo, turno, hodometro, litros, combustivel, observacoes))
+
+    conn.commit()
+    conn.close()
+
+
+def listar_abastecimentos():
+    # Retorna os abastecimentos mais recentes primeiro para a tela de historico.
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT data_hora, usuario, veiculo, turno, hodometro, litros, combustivel, observacoes
+        FROM abastecimentos
+        ORDER BY data_hora DESC
+    """)
+
+    dados = cursor.fetchall()
+    conn.close()
+
+    return dados
 
 
 def salvar_abertura_turno_db(data_hora, usuario, veiculo, hodometro_inicial, turno, observacoes):

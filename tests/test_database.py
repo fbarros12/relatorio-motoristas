@@ -30,6 +30,54 @@ def test_salva_e_lista_inspecoes_em_ordem_decrescente(temp_db):
     assert inspecoes[1][2] == "Ana"
 
 
+def test_salva_e_lista_abastecimentos_em_ordem_decrescente(temp_db):
+    database.salvar_abastecimento_db(
+        data_hora="2026-05-18 08:00:00",
+        usuario="Ana",
+        veiculo="CAM-01",
+        turno="Manha",
+        hodometro=1000.5,
+        litros=30.0,
+        combustivel="Diesel S10",
+        observacoes="Primeiro abastecimento",
+    )
+    database.salvar_abastecimento_db(
+        data_hora="2026-05-18 09:00:00",
+        usuario="Bruno",
+        veiculo="CAM-02",
+        turno="Tarde",
+        hodometro=2200.0,
+        litros=45.75,
+        combustivel="Diesel S500",
+        observacoes="Segundo abastecimento",
+    )
+
+    abastecimentos = database.listar_abastecimentos()
+
+    assert abastecimentos == [
+        (
+            "2026-05-18 09:00:00",
+            "Bruno",
+            "CAM-02",
+            "Tarde",
+            2200.0,
+            45.75,
+            "Diesel S500",
+            "Segundo abastecimento",
+        ),
+        (
+            "2026-05-18 08:00:00",
+            "Ana",
+            "CAM-01",
+            "Manha",
+            1000.5,
+            30.0,
+            "Diesel S10",
+            "Primeiro abastecimento",
+        ),
+    ]
+
+
 def test_obtem_turno_ativo_mais_recente_e_ignora_turnos_finalizados(temp_db):
     database.salvar_abertura_turno_db(
         data_hora="2026-05-18 07:00:00",
